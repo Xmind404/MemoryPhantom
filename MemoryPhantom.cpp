@@ -2,10 +2,8 @@
 
 void MemoryPhantom::VerifyHandle() const
 {
-    if (processHandle == nullptr || processHandle == INVALID_HANDLE_VALUE)
-    {
+    if (!processHandle || processHandle == INVALID_HANDLE_VALUE)
         throw std::runtime_error("Process handle is invalid");
-    }
 }
 
 bool MemoryPhantom::MemoryRead(LPCVOID addr, LPVOID buf, SIZE_T sz) const
@@ -56,7 +54,7 @@ bool MemoryPhantom::Attach(DWORD pid, DWORD accessRights)
 {
     Detach();
     processHandle = ::OpenProcess(accessRights, FALSE, pid);
-    if (processHandle != nullptr)
+    if (processHandle)
     {
         procID = pid;
         return true;
@@ -66,17 +64,15 @@ bool MemoryPhantom::Attach(DWORD pid, DWORD accessRights)
 
 void MemoryPhantom::Detach()
 {
-    if (processHandle != nullptr)
-    {
+    if (processHandle)
         ::CloseHandle(processHandle);
-        processHandle = nullptr;
-    }
+    processHandle = nullptr;
     procID = 0;
 }
 
 bool MemoryPhantom::IsActive() const
 {
-    return processHandle != nullptr && processHandle != INVALID_HANDLE_VALUE;
+    return processHandle && processHandle != INVALID_HANDLE_VALUE;
 }
 
 DWORD MemoryPhantom::GetPID() const
@@ -91,14 +87,14 @@ HANDLE MemoryPhantom::GetHandle() const
 
 std::optional<MemoryPhantom> MemoryPhantom::CreateFromName(const char* targetName, DWORD accessRights)
 {
-    PROCESSENTRY32 entry;
+    PROCESSENTRY32 entry{};
     entry.dwSize = sizeof(PROCESSENTRY32);
 
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE)
         return std::nullopt;
 
-    std::optional<MemoryPhantom> result = std::nullopt;
+    std::optional<MemoryPhantom> result;
 
     if (Process32First(snapshot, &entry))
     {
@@ -108,9 +104,7 @@ std::optional<MemoryPhantom> MemoryPhantom::CreateFromName(const char* targetNam
             {
                 MemoryPhantom mp;
                 if (mp.Attach(entry.th32ProcessID, accessRights))
-                {
                     result = std::move(mp);
-                }
                 break;
             }
         } while (Process32Next(snapshot, &entry));
@@ -124,14 +118,14 @@ std::optional<uintptr_t> MemoryPhantom::FindModuleBase(const char* moduleName) c
 {
     VerifyHandle();
 
-    MODULEENTRY32 entry;
+    MODULEENTRY32 entry{};
     entry.dwSize = sizeof(MODULEENTRY32);
 
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, procID);
     if (snapshot == INVALID_HANDLE_VALUE)
         return std::nullopt;
 
-    std::optional<uintptr_t> result = std::nullopt;
+    std::optional<uintptr_t> result;
 
     if (Module32First(snapshot, &entry))
     {
@@ -149,35 +143,6 @@ std::optional<uintptr_t> MemoryPhantom::FindModuleBase(const char* moduleName) c
     return result;
 }
 
-template<typename T>
-std::optional<T> MemoryPhantom::ReadData(uintptr_t addr) const
-{
-    T value;
-    if (MemoryRead(reinterpret_cast<LPCVOID>(addr), &value, sizeof(T)))
-    {
-        return value;
-    }
-    return std::nullopt;
-}
-
-template<typename T>
-std::optional<T> MemoryPhantom::ReadData(uintptr_t addr, int off) const
-{
-    return ReadData<T>(addr + off);
-}
-
-template<typename T>
-bool MemoryPhantom::WriteData(uintptr_t addr, const T& value) const
-{
-    return MemoryWrite(reinterpret_cast<LPVOID>(addr), &value, sizeof(T));
-}
-
-template<typename T>
-bool MemoryPhantom::WriteData(uintptr_t addr, int off, const T& value) const
-{
-    return WriteData<T>(addr + off, value);
-}
-
 std::optional<uintptr_t> MemoryPhantom::ReadPtr(uintptr_t addr) const
 {
     return ReadData<uintptr_t>(addr);
@@ -192,9 +157,7 @@ std::optional<std::vector<uint8_t>> MemoryPhantom::ReadBlock(uintptr_t addr, siz
 {
     std::vector<uint8_t> buffer(sz);
     if (MemoryRead(reinterpret_cast<LPCVOID>(addr), buffer.data(), sz))
-    {
         return buffer;
-    }
     return std::nullopt;
 }
 
@@ -208,10 +171,7 @@ std::optional<std::string> MemoryPhantom::ReadText(uintptr_t addr, size_t maxLen
     std::vector<char> buffer(maxLen + 1);
     if (MemoryRead(reinterpret_cast<LPCVOID>(addr), buffer.data(), maxLen))
     {
-        if (nullEnded)
-        {
-            buffer[maxLen] = '\0';
-        }
+        if (nullEnded) buffer[maxLen] = '\0';
         return std::string(buffer.data());
     }
     return std::nullopt;
@@ -222,10 +182,7 @@ std::optional<std::wstring> MemoryPhantom::ReadWideText(uintptr_t addr, size_t m
     std::vector<wchar_t> buffer(maxLen + 1);
     if (MemoryRead(reinterpret_cast<LPCVOID>(addr), buffer.data(), maxLen * sizeof(wchar_t)))
     {
-        if (nullEnded)
-        {
-            buffer[maxLen] = L'\0';
-        }
+        if (nullEnded) buffer[maxLen] = L'\0';
         return std::wstring(buffer.data());
     }
     return std::nullopt;
