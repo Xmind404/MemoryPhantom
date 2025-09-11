@@ -1,7 +1,7 @@
 # MemoryPhantom
 
 **MemoryPhantom** is a lightweight C++ library for reading and writing memory of running processes on Windows.  
-It allows easy process attachment, module locating, and data manipulation — from basic types, through strings, to vectors and matrices.
+It allows easy process attachment, module locating, and data manipulation — from primitive types, through strings, to vectors and matrices.
 
 Inspired by the C# project: [Swed64](https://github.com/Massivetwat/Swed64).
 
@@ -9,13 +9,13 @@ Inspired by the C# project: [Swed64](https://github.com/Massivetwat/Swed64).
 
 ## ✨ Features
 
-- Attach/detach from processes (by PID or process name).
-- Locate module base addresses (DLL/EXE).
-- Read/write primitive types (`int`, `float`, `double`, `bool`, ...).
-- Support for vectors (`Vec3`) and matrices (`Mat4x4`).
-- Support for strings (`std::string`, `std::wstring`).
-- Read/write memory blocks.
-- Convenient interface using `std::optional` for safer error handling.
+- Attach/detach from processes (by PID or process name)
+- Locate module base addresses (DLL/EXE)
+- Read/write primitive types (`int`, `float`, `double`, `bool`, etc.)
+- Support for vectors (`Vec3`) and matrices (`Mat4x4`)
+- Support for strings (`std::string`, `std::wstring`)
+- Read/write memory blocks
+- Uses `std::optional` for safe error handling
 
 ---
 
@@ -33,9 +33,7 @@ Inspired by the C# project: [Swed64](https://github.com/Massivetwat/Swed64).
 
 int main() {
     auto phantom = MemoryPhantom::CreateFromName("cs2.exe");
-    if (!phantom) {
-        return -1; // Process not found
-    }
+    if (!phantom) return -1; // Process not found
 
     MemoryPhantom mem = std::move(*phantom);
 
@@ -59,11 +57,11 @@ int main() {
 
 ```cpp
 MemoryPhantom();                                     // empty object
-MemoryPhantom(DWORD pid, DWORD rights = PROCESS_ALL_ACCESS);
-~MemoryPhantom();                                    // auto Detach()
+MemoryPhantom(DWORD pid, DWORD accessRights = PROCESS_ALL_ACCESS);
+~MemoryPhantom();                                    // automatically calls Detach()
 
-MemoryPhantom(MemoryPhantom&& other);                // move ctor
-MemoryPhantom& operator=(MemoryPhantom&& other);     // move assign
+MemoryPhantom(MemoryPhantom&& other) noexcept;      // move constructor
+MemoryPhantom& operator=(MemoryPhantom&& other) noexcept; // move assignment
 ```
 
 ---
@@ -71,7 +69,7 @@ MemoryPhantom& operator=(MemoryPhantom&& other);     // move assign
 ### Process Management
 
 ```cpp
-bool Attach(DWORD pid, DWORD rights = PROCESS_ALL_ACCESS);
+bool Attach(DWORD pid, DWORD accessRights = PROCESS_ALL_ACCESS);
 void Detach();
 bool IsActive() const;
 DWORD GetPID() const;
@@ -79,7 +77,7 @@ HANDLE GetHandle() const;
 
 static std::optional<MemoryPhantom> CreateFromName(
     const char* processName, 
-    DWORD rights = PROCESS_ALL_ACCESS
+    DWORD accessRights = PROCESS_ALL_ACCESS
 );
 ```
 
@@ -133,6 +131,10 @@ bool WriteText(uintptr_t addr, const std::string& text, bool addNull = true) con
 bool WriteWideText(uintptr_t addr, const std::wstring& text, bool addNull = true) const;
 ```
 
+**Note:**  
+- `nullEnded = true` only appends a null character at the end of the buffer, it does not detect the actual string length in memory.  
+- Always ensure `maxLen` matches the expected string length to avoid reading uninitialized memory.
+
 ---
 
 ### Math Structures
@@ -152,6 +154,8 @@ bool WriteVec3(uintptr_t addr, const Vec3& vec) const;
 std::optional<Mat4x4> ReadMatrix(uintptr_t addr) const;
 bool WriteMatrix(uintptr_t addr, const Mat4x4& matrix) const;
 ```
+
+**Note:** `Vec3` size is 12 bytes, `Mat4x4` size is 64 bytes. Checked with `static_assert` in code.
 
 ---
 
@@ -191,8 +195,7 @@ int main() {
 }
 ```
 
-⚠️ **Note:** offset `0x123456` is just an example.  
-Use actual CS2 offsets in practice (e.g., `dwLocalPlayer`, `m_iHealth`, etc.).
+⚠️ **Note:** offset `0x123456` is only an example. Use actual CS2 offsets (e.g., `dwLocalPlayer`, `m_iHealth`, etc.) in practice.
 
 ---
 
