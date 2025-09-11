@@ -50,18 +50,6 @@ public:
     static std::optional<MemoryPhantom> CreateFromName(const char* targetName, DWORD accessRights = PROCESS_ALL_ACCESS);
     std::optional<uintptr_t> FindModuleBase(const char* moduleName) const;
 
-    template<typename T>
-    std::optional<T> ReadData(uintptr_t addr) const;
-
-    template<typename T>
-    std::optional<T> ReadData(uintptr_t addr, int off) const;
-
-    template<typename T>
-    bool WriteData(uintptr_t addr, const T& value) const;
-
-    template<typename T>
-    bool WriteData(uintptr_t addr, int off, const T& value) const;
-
     std::optional<uintptr_t> ReadPtr(uintptr_t addr) const;
     std::optional<uintptr_t> ReadPtr(uintptr_t addr, int off) const;
     std::optional<std::vector<uint8_t>> ReadBlock(uintptr_t addr, size_t sz) const;
@@ -74,6 +62,34 @@ public:
     bool WriteVec3(uintptr_t addr, const Vec3& vec) const;
     std::optional<Mat4x4> ReadMatrix(uintptr_t addr) const;
     bool WriteMatrix(uintptr_t addr, const Mat4x4& matrix) const;
+
+    // --- szablony ---
+    template<typename T>
+    std::optional<T> ReadData(uintptr_t addr) const
+    {
+        T value;
+        if (MemoryRead(reinterpret_cast<LPCVOID>(addr), &value, sizeof(T)))
+            return value;
+        return std::nullopt;
+    }
+
+    template<typename T>
+    std::optional<T> ReadData(uintptr_t addr, int off) const
+    {
+        return ReadData<T>(addr + off);
+    }
+
+    template<typename T>
+    bool WriteData(uintptr_t addr, const T& value) const
+    {
+        return MemoryWrite(reinterpret_cast<LPVOID>(addr), &value, sizeof(T));
+    }
+
+    template<typename T>
+    bool WriteData(uintptr_t addr, int off, const T& value) const
+    {
+        return WriteData<T>(addr + off, value);
+    }
 };
 
 static_assert(sizeof(Vec3) == 12, "Vec3 size incorrect");
