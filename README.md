@@ -23,6 +23,7 @@ Inspired by the C# project: [Swed64](https://github.com/Massivetwat/Swed64).
 
 1. Copy `MemoryPhantom.h` and `MemoryPhantom.cpp` into your project.
 2. Compile your project using **C++17** or newer.
+
 G++: ```g++ Program.cpp MemoryPhantom.cpp -o Program.exe```
 ---
 
