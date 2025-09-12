@@ -63,7 +63,6 @@ public:
     std::optional<Mat4x4> ReadMatrix(uintptr_t addr) const;
     bool WriteMatrix(uintptr_t addr, const Mat4x4& matrix) const;
 
-    // --- szablony ---
     template<typename T>
     std::optional<T> ReadData(uintptr_t addr) const
     {
