@@ -60,17 +60,21 @@ HANDLE MemoryPhantom::GetHandle() const {
 }
 
 std::optional<MemoryPhantom> MemoryPhantom::CreateFromName(const char* processName, DWORD accessRights) {
-    PROCESSENTRY32 entry;
-    entry.dwSize = sizeof(PROCESSENTRY32);
+    PROCESSENTRY32W entry;
+    entry.dwSize = sizeof(PROCESSENTRY32W);
 
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE) {
         return std::nullopt;
     }
 
-    if (Process32First(snapshot, &entry)) {
-        while (Process32Next(snapshot, &entry)) {
-            std::string currentProcessName = entry.szExeFile;
+    if (Process32FirstW(snapshot, &entry)) {
+        do {
+            int size_needed = WideCharToMultiByte(CP_ACP, 0, entry.szExeFile, -1, NULL, 0, NULL, NULL);
+            std::string currentProcessName(size_needed, 0);
+            WideCharToMultiByte(CP_ACP, 0, entry.szExeFile, -1, &currentProcessName[0], size_needed, NULL, NULL);
+            currentProcessName.pop_back();
+
             if (_stricmp(currentProcessName.c_str(), processName) == 0) {
                 CloseHandle(snapshot);
                 MemoryPhantom phantom;
@@ -79,7 +83,7 @@ std::optional<MemoryPhantom> MemoryPhantom::CreateFromName(const char* processNa
                 }
                 return std::nullopt;
             }
-        }
+        } while (Process32NextW(snapshot, &entry));
     }
 
     CloseHandle(snapshot);
@@ -255,23 +259,3 @@ bool MemoryPhantom::WriteMatrix(uintptr_t addr, const Mat4x4& matrix) const {
     static_assert(sizeof(Mat4x4) == 64, "Mat4x4 should be 64 bytes");
     return WriteData<Mat4x4>(addr, matrix);
 }
-
-template std::optional<int> MemoryPhantom::ReadData<int>(uintptr_t) const;
-template std::optional<float> MemoryPhantom::ReadData<float>(uintptr_t) const;
-template std::optional<double> MemoryPhantom::ReadData<double>(uintptr_t) const;
-template std::optional<short> MemoryPhantom::ReadData<short>(uintptr_t) const;
-template std::optional<unsigned short> MemoryPhantom::ReadData<unsigned short>(uintptr_t) const;
-template std::optional<unsigned int> MemoryPhantom::ReadData<unsigned int>(uintptr_t) const;
-template std::optional<unsigned long long> MemoryPhantom::ReadData<unsigned long long>(uintptr_t) const;
-template std::optional<bool> MemoryPhantom::ReadData<bool>(uintptr_t) const;
-template std::optional<char> MemoryPhantom::ReadData<char>(uintptr_t) const;
-
-template bool MemoryPhantom::WriteData<int>(uintptr_t, const int&) const;
-template bool MemoryPhantom::WriteData<float>(uintptr_t, const float&) const;
-template bool MemoryPhantom::WriteData<double>(uintptr_t, const double&) const;
-template bool MemoryPhantom::WriteData<short>(uintptr_t, const short&) const;
-template bool MemoryPhantom::WriteData<unsigned short>(uintptr_t, const unsigned short&) const;
-template bool MemoryPhantom::WriteData<unsigned int>(uintptr_t, const unsigned int&) const;
-template bool MemoryPhantom::WriteData<unsigned long long>(uintptr_t, const unsigned long long&) const;
-template bool MemoryPhantom::WriteData<bool>(uintptr_t, const bool&) const;
-template bool MemoryPhantom::WriteData<char>(uintptr_t, const char&) const;
