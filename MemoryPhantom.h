@@ -13,6 +13,24 @@ private:
     HANDLE hProcess;
     DWORD processId;
 
+    template<typename T>
+    bool InternalRead(uintptr_t addr, T& value) const {
+        if (!hProcess || addr == 0) return false;
+        SIZE_T bytesRead;
+        return ReadProcessMemory(hProcess, reinterpret_cast<LPCVOID>(addr), &value, sizeof(T), &bytesRead) &&
+            bytesRead == sizeof(T);
+    }
+
+    template<typename T>
+    bool InternalWrite(uintptr_t addr, const T& value) const {
+        if (!hProcess || addr == 0) return false;
+        SIZE_T bytesWritten;
+        return WriteProcessMemory(hProcess, reinterpret_cast<LPVOID>(addr), &value, sizeof(T), &bytesWritten) &&
+            bytesWritten == sizeof(T);
+    }
+
+    std::vector<uint8_t> InternalReadBytes(uintptr_t addr, size_t sz) const;
+
 public:
     struct Vec3 {
         float x, y, z;
@@ -41,68 +59,108 @@ public:
     DWORD GetPID() const;
     HANDLE GetHandle() const;
 
-    static std::optional<MemoryPhantom> CreateFromName(
-        const char* processName,
-        DWORD accessRights = PROCESS_ALL_ACCESS
-    );
+    static std::optional<MemoryPhantom> CreateFromName(const char* processName, DWORD accessRights = PROCESS_ALL_ACCESS);
 
     std::optional<uintptr_t> FindModuleBase(const char* moduleName) const;
 
-    template<typename T>
-    std::optional<T> ReadData(uintptr_t addr) const;
+    int ReadInt(uintptr_t addr) const;
+    int ReadInt(uintptr_t addr, int offset) const;
 
-    template<typename T>
-    std::optional<T> ReadData(uintptr_t addr, int off) const;
+    float ReadFloat(uintptr_t addr) const;
+    float ReadFloat(uintptr_t addr, int offset) const;
 
-    template<typename T>
-    bool WriteData(uintptr_t addr, const T& value) const;
+    double ReadDouble(uintptr_t addr) const;
+    double ReadDouble(uintptr_t addr, int offset) const;
 
-    template<typename T>
-    bool WriteData(uintptr_t addr, int off, const T& value) const;
+    short ReadShort(uintptr_t addr) const;
+    short ReadShort(uintptr_t addr, int offset) const;
 
-    std::optional<uintptr_t> ReadPtr(uintptr_t addr) const;
-    std::optional<uintptr_t> ReadPtr(uintptr_t addr, int off) const;
+    unsigned short ReadUShort(uintptr_t addr) const;
+    unsigned short ReadUShort(uintptr_t addr, int offset) const;
 
-    std::optional<std::vector<uint8_t>> ReadBlock(uintptr_t addr, size_t sz) const;
-    bool WriteBlock(uintptr_t addr, const std::vector<uint8_t>& data) const;
+    unsigned int ReadUInt(uintptr_t addr) const;
+    unsigned int ReadUInt(uintptr_t addr, int offset) const;
 
-    std::optional<std::string> ReadText(uintptr_t addr, size_t maxLen, bool nullEnded = true) const;
-    std::optional<std::wstring> ReadWideText(uintptr_t addr, size_t maxLen, bool nullEnded = true) const;
+    uint64_t ReadULong(uintptr_t addr) const;
+    uint64_t ReadULong(uintptr_t addr, int offset) const;
 
-    bool WriteText(uintptr_t addr, const std::string& text, bool addNull = true) const;
-    bool WriteWideText(uintptr_t addr, const std::wstring& text, bool addNull = true) const;
+    int64_t ReadLong(uintptr_t addr) const;
+    int64_t ReadLong(uintptr_t addr, int offset) const;
+
+    bool ReadBool(uintptr_t addr) const;
+    bool ReadBool(uintptr_t addr, int offset) const;
+
+    char ReadChar(uintptr_t addr) const;
+    char ReadChar(uintptr_t addr, int offset) const;
+
+    uint8_t ReadByte(uintptr_t addr) const;
+    uint8_t ReadByte(uintptr_t addr, int offset) const;
+
+    std::string ReadString(uintptr_t addr, size_t length) const;
+    std::string ReadString(uintptr_t addr, int offset, size_t length) const;
+
+    std::wstring ReadWString(uintptr_t addr, size_t length) const;
+    std::wstring ReadWString(uintptr_t addr, int offset, size_t length) const;
 
     std::optional<Vec3> ReadVec3(uintptr_t addr) const;
-    bool WriteVec3(uintptr_t addr, const Vec3& vec) const;
+    std::optional<Vec3> ReadVec3(uintptr_t addr, int offset) const;
 
     std::optional<Mat4x4> ReadMatrix(uintptr_t addr) const;
+    std::optional<Mat4x4> ReadMatrix(uintptr_t addr, int offset) const;
+
+    uintptr_t ReadPtr(uintptr_t addr) const;
+    uintptr_t ReadPtr(uintptr_t addr, int offset) const;
+
+    std::vector<uint8_t> ReadBytes(uintptr_t addr, size_t sz) const;
+    std::vector<uint8_t> ReadBytes(uintptr_t addr, int offset, size_t sz) const;
+
+    bool WriteInt(uintptr_t addr, int value) const;
+    bool WriteInt(uintptr_t addr, int offset, int value) const;
+
+    bool WriteFloat(uintptr_t addr, float value) const;
+    bool WriteFloat(uintptr_t addr, int offset, float value) const;
+
+    bool WriteDouble(uintptr_t addr, double value) const;
+    bool WriteDouble(uintptr_t addr, int offset, double value) const;
+
+    bool WriteShort(uintptr_t addr, short value) const;
+    bool WriteShort(uintptr_t addr, int offset, short value) const;
+
+    bool WriteUShort(uintptr_t addr, unsigned short value) const;
+    bool WriteUShort(uintptr_t addr, int offset, unsigned short value) const;
+
+    bool WriteUInt(uintptr_t addr, unsigned int value) const;
+    bool WriteUInt(uintptr_t addr, int offset, unsigned int value) const;
+
+    bool WriteULong(uintptr_t addr, uint64_t value) const;
+    bool WriteULong(uintptr_t addr, int offset, uint64_t value) const;
+
+    bool WriteLong(uintptr_t addr, int64_t value) const;
+    bool WriteLong(uintptr_t addr, int offset, int64_t value) const;
+
+    bool WriteBool(uintptr_t addr, bool value) const;
+    bool WriteBool(uintptr_t addr, int offset, bool value) const;
+
+    bool WriteChar(uintptr_t addr, char value) const;
+    bool WriteChar(uintptr_t addr, int offset, char value) const;
+
+    bool WriteByte(uintptr_t addr, uint8_t value) const;
+    bool WriteByte(uintptr_t addr, int offset, uint8_t value) const;
+
+    bool WriteString(uintptr_t addr, const std::string& value) const;
+    bool WriteString(uintptr_t addr, int offset, const std::string& value) const;
+
+    bool WriteWString(uintptr_t addr, const std::wstring& value) const;
+    bool WriteWString(uintptr_t addr, int offset, const std::wstring& value) const;
+
+    bool WriteVec3(uintptr_t addr, const Vec3& vec) const;
+    bool WriteVec3(uintptr_t addr, int offset, const Vec3& vec) const;
+
     bool WriteMatrix(uintptr_t addr, const Mat4x4& matrix) const;
+    bool WriteMatrix(uintptr_t addr, int offset, const Mat4x4& matrix) const;
+
+    bool WriteBytes(uintptr_t addr, const std::vector<uint8_t>& data) const;
+    bool WriteBytes(uintptr_t addr, int offset, const std::vector<uint8_t>& data) const;
 };
-
-template std::optional<int> MemoryPhantom::ReadData<int>(uintptr_t) const;
-template std::optional<float> MemoryPhantom::ReadData<float>(uintptr_t) const;
-template std::optional<double> MemoryPhantom::ReadData<double>(uintptr_t) const;
-template std::optional<short> MemoryPhantom::ReadData<short>(uintptr_t) const;
-template std::optional<unsigned short> MemoryPhantom::ReadData<unsigned short>(uintptr_t) const;
-template std::optional<unsigned int> MemoryPhantom::ReadData<unsigned int>(uintptr_t) const;
-template std::optional<unsigned long long> MemoryPhantom::ReadData<unsigned long long>(uintptr_t) const;
-template std::optional<bool> MemoryPhantom::ReadData<bool>(uintptr_t) const;
-template std::optional<char> MemoryPhantom::ReadData<char>(uintptr_t) const;
-template std::optional<uint8_t> MemoryPhantom::ReadData<uint8_t>(uintptr_t) const;
-template std::optional<uint32_t> MemoryPhantom::ReadData<uint32_t>(uintptr_t) const;
-template std::optional<int64_t> MemoryPhantom::ReadData<int64_t>(uintptr_t) const;
-
-template bool MemoryPhantom::WriteData<int>(uintptr_t, const int&) const;
-template bool MemoryPhantom::WriteData<float>(uintptr_t, const float&) const;
-template bool MemoryPhantom::WriteData<double>(uintptr_t, const double&) const;
-template bool MemoryPhantom::WriteData<short>(uintptr_t, const short&) const;
-template bool MemoryPhantom::WriteData<unsigned short>(uintptr_t, const unsigned short&) const;
-template bool MemoryPhantom::WriteData<unsigned int>(uintptr_t, const unsigned int&) const;
-template bool MemoryPhantom::WriteData<unsigned long long>(uintptr_t, const unsigned long long&) const;
-template bool MemoryPhantom::WriteData<bool>(uintptr_t, const bool&) const;
-template bool MemoryPhantom::WriteData<char>(uintptr_t, const char&) const;
-template bool MemoryPhantom::WriteData<uint8_t>(uintptr_t, const uint8_t&) const;
-template bool MemoryPhantom::WriteData<uint32_t>(uintptr_t, const uint32_t&) const;
-template bool MemoryPhantom::WriteData<int64_t>(uintptr_t, const int64_t&) const;
 
 #endif
