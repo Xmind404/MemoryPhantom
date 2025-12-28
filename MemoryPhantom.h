@@ -79,4 +79,30 @@ public:
     bool WriteMatrix(uintptr_t addr, const Mat4x4& matrix) const;
 };
 
+template std::optional<int> MemoryPhantom::ReadData<int>(uintptr_t) const;
+template std::optional<float> MemoryPhantom::ReadData<float>(uintptr_t) const;
+template std::optional<double> MemoryPhantom::ReadData<double>(uintptr_t) const;
+template std::optional<short> MemoryPhantom::ReadData<short>(uintptr_t) const;
+template std::optional<unsigned short> MemoryPhantom::ReadData<unsigned short>(uintptr_t) const;
+template std::optional<unsigned int> MemoryPhantom::ReadData<unsigned int>(uintptr_t) const;
+template std::optional<unsigned long long> MemoryPhantom::ReadData<unsigned long long>(uintptr_t) const;
+template std::optional<bool> MemoryPhantom::ReadData<bool>(uintptr_t) const;
+template std::optional<char> MemoryPhantom::ReadData<char>(uintptr_t) const;
+template std::optional<uint8_t> MemoryPhantom::ReadData<uint8_t>(uintptr_t) const;
+template std::optional<uint32_t> MemoryPhantom::ReadData<uint32_t>(uintptr_t) const;
+template std::optional<int64_t> MemoryPhantom::ReadData<int64_t>(uintptr_t) const;
+
+template bool MemoryPhantom::WriteData<int>(uintptr_t, const int&) const;
+template bool MemoryPhantom::WriteData<float>(uintptr_t, const float&) const;
+template bool MemoryPhantom::WriteData<double>(uintptr_t, const double&) const;
+template bool MemoryPhantom::WriteData<short>(uintptr_t, const short&) const;
+template bool MemoryPhantom::WriteData<unsigned short>(uintptr_t, const unsigned short&) const;
+template bool MemoryPhantom::WriteData<unsigned int>(uintptr_t, const unsigned int&) const;
+template bool MemoryPhantom::WriteData<unsigned long long>(uintptr_t, const unsigned long long&) const;
+template bool MemoryPhantom::WriteData<bool>(uintptr_t, const bool&) const;
+template bool MemoryPhantom::WriteData<char>(uintptr_t, const char&) const;
+template bool MemoryPhantom::WriteData<uint8_t>(uintptr_t, const uint8_t&) const;
+template bool MemoryPhantom::WriteData<uint32_t>(uintptr_t, const uint32_t&) const;
+template bool MemoryPhantom::WriteData<int64_t>(uintptr_t, const int64_t&) const;
+
 #endif
